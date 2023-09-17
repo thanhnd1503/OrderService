@@ -27,7 +27,7 @@ public class OrderDto {
     @Pattern(regexp = "\\d{10}", message = "Phone Number must be 10 digits")
     String phoneNumber;
     @NotEmpty(message = "Country Code is required")
-    @Pattern(regexp = "\\d{2}", message = "Country Code must be 2 digits")
+    @Pattern(regexp = "^[a-zA-Z]{2}$", message = "Country Code must be 2 letters")
     String countryCode;
     @NotEmpty(message = "Country Name is required")
     String countryName;

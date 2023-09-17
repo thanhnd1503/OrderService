@@ -3,7 +3,7 @@ package com.orderservice.service;
 import com.orderservice.connection.AppConnection;
 import com.orderservice.dto.ScalaOrderDto;
 import com.orderservice.entity.Order;
-import com.orderservice.mapper.OrderMapper;
+import com.orderservice.mapper.OrderMapperImpl;
 import com.orderservice.payload.request.OrderCreatingRequest;
 import com.orderservice.payload.response.OrderCreatingResponse;
 import io.netty.util.CharsetUtil;
@@ -18,7 +18,7 @@ import java.net.HttpURLConnection;
 @Service
 public class OrderServiceImpl implements OrderService {
     @Autowired
-    OrderMapper orderMapper;
+    OrderMapperImpl orderMapperImpl;
 
     @Override
     public OrderCreatingResponse createOrder(OrderCreatingRequest request) {
@@ -26,12 +26,12 @@ public class OrderServiceImpl implements OrderService {
             HttpURLConnection connection = AppConnection.connectToScalaPayAPI(request.getAuthorization());
 
             // Generate JSON data to send to ScalaPay API
-            Order order = orderMapper.convertDtoToEntity(request.getRequestBody());
-            String orderJsonInput = orderMapper.convertEntityToJson(order);
+            Order order = orderMapperImpl.convertDtoToEntity(request.getRequestBody());
+            String orderJsonInput = orderMapperImpl.convertEntityToJson(order);
 
             // Write JSON data to the connection's output stream
             try (DataOutputStream os = new DataOutputStream(connection.getOutputStream())) {
-                byte[] input = orderJsonInput.getBytes("utf-8");
+                byte[] input = orderJsonInput.getBytes(CharsetUtil.UTF_8);
                 os.write(input, 0, input.length);
             }
 
@@ -44,7 +44,7 @@ public class OrderServiceImpl implements OrderService {
                     jsonResponse.append(responseLine.trim());
                 }
 
-                ScalaOrderDto scalaOrderDto = orderMapper.convertJsonToDto(String.valueOf(jsonResponse));
+                ScalaOrderDto scalaOrderDto = orderMapperImpl.convertJsonToDto(String.valueOf(jsonResponse));
                 return new OrderCreatingResponse("Place an order successfully!", scalaOrderDto);
             } catch (Exception e) {
                 e.printStackTrace();
