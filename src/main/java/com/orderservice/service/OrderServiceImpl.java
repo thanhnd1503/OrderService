@@ -1,53 +1,60 @@
 package com.orderservice.service;
 
-import com.orderservice.connection.ScalaPayConnection;
-import com.orderservice.dto.OrderDto;
-import com.orderservice.entity.*;
+import com.orderservice.connection.AppConnection;
+import com.orderservice.dto.ScalaOrderDto;
+import com.orderservice.entity.Order;
 import com.orderservice.mapper.OrderMapper;
+import com.orderservice.payload.request.OrderCreatingRequest;
+import com.orderservice.payload.response.OrderCreatingResponse;
+import io.netty.util.CharsetUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
-
 
 @Service
 public class OrderServiceImpl implements OrderService {
     @Autowired
     OrderMapper orderMapper;
+
     @Override
-    public String createOrder(OrderDto orderDto, String authToken) {
+    public OrderCreatingResponse createOrder(OrderCreatingRequest request) {
         try {
-            HttpURLConnection connection = ScalaPayConnection.getScalaPayConnection(authToken);
-            // Generate JSON data to send
-            Order order = orderMapper.convertDtoToEntity(orderDto);
-            String jsonInputString = orderMapper.convertDtoToJson(order);
+            HttpURLConnection connection = AppConnection.connectToScalaPayAPI(request.getAuthorization());
+
+            // Generate JSON data to send to ScalaPay API
+            Order order = orderMapper.convertDtoToEntity(request.getRequestBody());
+            String orderJsonInput = orderMapper.convertEntityToJson(order);
+
             // Write JSON data to the connection's output stream
             try (DataOutputStream os = new DataOutputStream(connection.getOutputStream())) {
-                byte[] input = jsonInputString.getBytes("utf-8");
+                byte[] input = orderJsonInput.getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
+
             // Read the response from the connection
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
-                StringBuilder response = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(connection.getInputStream(), CharsetUtil.UTF_8))) {
+                StringBuilder jsonResponse = new StringBuilder();
                 String responseLine;
                 while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
+                    jsonResponse.append(responseLine.trim());
                 }
-                return response.toString();
+
+                ScalaOrderDto scalaOrderDto = orderMapper.convertJsonToDto(String.valueOf(jsonResponse));
+                return new OrderCreatingResponse("Place an order successfully!", scalaOrderDto);
             } catch (Exception e) {
                 e.printStackTrace();
-                return "Error reading HTTP response.";
             } finally {
                 connection.disconnect();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return "Error sending HTTP request.";
         }
 
+        return new OrderCreatingResponse("Place an order failed!", null);
     }
 }

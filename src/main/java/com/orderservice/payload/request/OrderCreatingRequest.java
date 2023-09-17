@@ -1,4 +1,4 @@
-package com.orderservice.payload;
+package com.orderservice.payload.request;
 
 import com.orderservice.dto.OrderDto;
 import lombok.AllArgsConstructor;
@@ -10,8 +10,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class OrderResponseDto {
-    private String message;
-    private String status;
-    private OrderDto orderDto;
+public class OrderCreatingRequest {
+
+    private String authorization;
+    private OrderDto requestBody;
 }

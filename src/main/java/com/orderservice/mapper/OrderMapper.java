@@ -2,13 +2,14 @@ package com.orderservice.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.orderservice.dto.OrderDto;
+import com.orderservice.dto.ScalaOrderDto;
 import com.orderservice.entity.*;
 import org.springframework.stereotype.Component;
 
 @Component
-public class OrderMapper implements IOrderMapper{
+public class OrderMapper implements IOrderMapper {
     @Override
-    public String convertDtoToJson(Order order) {
+    public String convertEntityToJson(Order order) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             String json = objectMapper.writeValueAsString(order);
@@ -17,6 +18,18 @@ public class OrderMapper implements IOrderMapper{
             e.printStackTrace();
             return "Conversion failed!!";
         }
+    }
+
+    @Override
+    public ScalaOrderDto convertJsonToDto(String json) {
+        ScalaOrderDto scalaOrderDto = null;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            scalaOrderDto = mapper.readValue(json, ScalaOrderDto.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return scalaOrderDto;
     }
 
     @Override
@@ -32,7 +45,6 @@ public class OrderMapper implements IOrderMapper{
         result.setMerchant(merchant);
         result.setTotalAmount(totalAmount);
         result.setShipping(shipping);
-
         return result;
     }
 
